@@ -120,3 +120,26 @@ eval "$(starship init bash)"
 export PATH=$PATH:/usr/local/go/bin
 export PATH=$PATH:/usr/local/go/bin
 alias kubectl='microk8s kubectl'
+
+# kubectl shortcuts
+alias k='kubectl'
+alias kgp='kubectl get pods'
+alias kgp='kubectl get pods -A'
+alias kgs='kubectl get svc'
+alias kgn='kubectl get nodes'
+alias kctx='kubectl config current-context'
+
+# docker
+alias d='docker'
+alias dc='docker compose'
+
+# navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+
+# git
+alias gs='git status'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git log --oneline --graph --decorate'
