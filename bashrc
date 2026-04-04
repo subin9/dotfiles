@@ -116,7 +116,7 @@ if ! shopt -oq posix; then
   fi
 fi
 eval "$(starship init bash)"
-. "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 export PATH=$PATH:/usr/local/go/bin
 export PATH=$PATH:/usr/local/go/bin
 alias kubectl='microk8s kubectl'
