@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# sh/dash 로 실행해도 bash 로 다시 실행 (이 스크립트는 bash 문법을 사용)
+if [ -z "${BASH_VERSION:-}" ]; then exec bash "$0" "$@"; fi
+
 # ============================================================
 #  Linux dotfiles setup  (Debian/Ubuntu · apt 기준)
 #  - 이미 설치된 건 건너뜀 / 재실행해도 안전 (idempotent)
@@ -123,37 +126,7 @@ echo "── shell config ──"
 if ! grep -q "dotfiles managed block" "$DOTFILES/zshrc" 2>/dev/null; then
   cat >> "$DOTFILES/zshrc" <<'EOF'
 
-# >>> dotfiles managed block >>>   (setup.sh 가 자동 추가 — 직접 수정 가능)
-export PATH="$HOME/.local/bin:$PATH"
-
-# 프롬프트 / 디렉터리 점프 / 퍼지 파인더
-eval "$(starship init zsh)"
-eval "$(zoxide init zsh)"
-if fzf --zsh >/dev/null 2>&1; then
-  source <(fzf --zsh)                                   # fzf 0.48+
-else
-  [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ] && source /usr/share/doc/fzf/examples/key-bindings.zsh
-  [ -f /usr/share/doc/fzf/examples/completion.zsh   ] && source /usr/share/doc/fzf/examples/completion.zsh
-fi
-
-# 별칭
-alias ls="eza --icons"
-alias ll="eza -l  --git --icons"
-alias la="eza -la --git --icons"
-alias tree="eza --tree --icons"
-alias lg="lazygit"
-alias top="btop"
-# 아래는 기존 명령을 덮어쓰니 원하면 주석 해제 (bat/fd 는 위에서 심링크해둠):
-# alias cat="bat --paging=never"
-# alias grep="rg"
-# alias find="fd"
-
-# zsh 플러그인 (syntax-highlighting 은 반드시 맨 마지막에 source)
-[ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] \
-  && source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-[ -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] \
-  && source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-# <<< dotfiles managed block <<<
+<
 EOF
   echo "✓ $DOTFILES/zshrc 에 셸 설정 추가됨"
 else
