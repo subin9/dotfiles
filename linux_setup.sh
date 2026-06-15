@@ -22,6 +22,44 @@ fi
 ARCH="$(dpkg --print-architecture)"   # amd64 / arm64
 
 # ============================================================
+#  0) yes/no 질문 헬퍼
+#     - 대화형(터미널)이면 사용자에게 물어봄
+#     - 비대화형(curl | bash 등 TTY 없음)이면 기본값 사용
+#     - 환경변수로 미리 답할 수도 있음:
+#         INSTALL_CLAUDE_CODE=1  /  INSTALL_GH=0  처럼 0/1 지정
+# ============================================================
+ask_yes_no() {
+  # $1 = 질문 문구, $2 = 기본값(y/n), $3 = (선택) 환경변수 이름
+  local prompt="$1" default="${2:-n}" envname="${3:-}" reply
+
+  # 환경변수로 미리 답이 주어졌으면 그걸 사용 (1/y/yes = 예, 0/n/no = 아니오)
+  if [ -n "$envname" ]; then
+    local envval="${!envname:-}"
+    case "$envval" in
+      1|y|Y|yes|YES) return 0 ;;
+      0|n|N|no|NO)   return 1 ;;
+    esac
+  fi
+
+  # TTY 가 없으면(파이프 실행 등) 기본값으로 진행
+  if [ ! -t 0 ]; then
+    [ "$default" = "y" ]
+    return
+  fi
+
+  if [ "$default" = "y" ]; then
+    read -r -p "$prompt [Y/n] " reply || reply=""
+  else
+    read -r -p "$prompt [y/N] " reply || reply=""
+  fi
+  reply="${reply:-$default}"
+  case "$reply" in
+    [Yy]*) return 0 ;;
+    *)     return 1 ;;
+  esac
+}
+
+# ============================================================
 #  1) apt 패키지 (이미 깔린 건 apt 가 알아서 건너뜀)
 # ============================================================
 echo "── apt packages ──"
@@ -80,8 +118,14 @@ if ! command -v eza &>/dev/null; then
   sudo apt-get install -y eza
 fi
 
+# ============================================================
+#  2-A) 선택 설치 (설치할지 물어봄)
+# ============================================================
+
 # ── gh (GitHub CLI) → 공식 apt 저장소 ──
-if ! command -v gh &>/dev/null; then
+if command -v gh &>/dev/null; then
+  echo "✓ gh 이미 설치됨 (건너뜀)"
+elif ask_yes_no "GitHub CLI(gh) 를 설치할까요?" y INSTALL_GH; then
   echo "→ installing gh ..."
   sudo mkdir -p -m 755 /etc/apt/keyrings
   wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg \
@@ -91,6 +135,24 @@ if ! command -v gh &>/dev/null; then
     | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
   sudo apt-get update
   sudo apt-get install -y gh
+  echo "  ↳ 로그인:  gh auth login"
+else
+  echo "⊘ gh 설치 건너뜀"
+fi
+
+# ── Claude Code → 공식 네이티브 설치 스크립트 (Node.js 불필요, ~/.local/bin 에 설치) ──
+if command -v claude &>/dev/null; then
+  echo "✓ claude code 이미 설치됨 (건너뜀)"
+elif ask_yes_no "Claude Code 를 설치할까요?" y INSTALL_CLAUDE_CODE; then
+  echo "→ installing Claude Code ..."
+  # set -e 상태에서 설치 실패가 전체 스크립트를 중단시키지 않도록 보호
+  if curl -fsSL https://claude.ai/install.sh | bash; then
+    echo "  ↳ 설치 완료. 새 셸에서:  claude --version  /  첫 실행 시 브라우저로 로그인"
+  else
+    echo "⚠ Claude Code 설치 실패 → 수동 설치:  curl -fsSL https://claude.ai/install.sh | bash"
+  fi
+else
+  echo "⊘ Claude Code 설치 건너뜀"
 fi
 
 # ── lazygit (apt 에 없음) → GitHub 릴리스 ──
